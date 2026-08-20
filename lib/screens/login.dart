@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'dashboard.dart';
 import 'register.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -12,11 +13,9 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordHidden = true;
 
-  final TextEditingController _emailController =
-      TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
 
-  final TextEditingController _passwordController =
-      TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -31,26 +30,19 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
                 const SizedBox(height: 30),
 
                 // Title
                 const Text(
                   'Welcome Back! 👋',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 8),
 
                 const Text(
                   'Login to continue',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black54,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.black54),
                 ),
 
                 const SizedBox(height: 30),
@@ -61,9 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     hintText: 'Email',
-                    prefixIcon: const Icon(
-                      Icons.email_outlined,
-                    ),
+                    prefixIcon: const Icon(Icons.email_outlined),
                     filled: true,
                     fillColor: Colors.grey.shade200,
                     border: OutlineInputBorder(
@@ -83,9 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: InputDecoration(
                     hintText: 'Password',
 
-                    prefixIcon: const Icon(
-                      Icons.lock_outline,
-                    ),
+                    prefixIcon: const Icon(Icons.lock_outline),
 
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -96,8 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       onPressed: () {
                         setState(() {
-                          _isPasswordHidden =
-                              !_isPasswordHidden;
+                          _isPasswordHidden = !_isPasswordHidden;
                         });
                       },
                     ),
@@ -125,9 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     child: const Text(
                       'Forgot Password?',
-                      style: TextStyle(
-                        color: Colors.deepPurple,
-                      ),
+                      style: TextStyle(color: Colors.deepPurple),
                     ),
                   ),
                 ),
@@ -141,34 +126,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   child: ElevatedButton(
                     onPressed: () {
-                      final email =
-                          _emailController.text;
-
-                      final password =
-                          _passwordController.text;
-
-                      print('Email: $email');
-                      print('Password: $password');
-
-                      // TODO:
-                      // Connect Spring Boot API here
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const DashboardScreen(),
+                        ),
+                        (route) => false,
+                      );
                     },
 
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
 
                       shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(30),
+                        borderRadius: BorderRadius.circular(30),
                       ),
                     ),
 
                     child: const Text(
                       'Login',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.white,
-                      ),
+                      style: TextStyle(fontSize: 18, color: Colors.white),
                     ),
                   ),
                 ),
@@ -185,11 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
 
                       children: [
-
-                        const TextSpan(
-                          text:
-                              "Don't have an account? ",
-                        ),
+                        const TextSpan(text: "Don't have an account? "),
 
                         TextSpan(
                           text: 'Register',
@@ -199,17 +171,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             fontWeight: FontWeight.bold,
                           ),
 
-                          recognizer:
-                              TapGestureRecognizer()
-                                ..onTap = () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          const RegisterScreen(),
-                                    ),
-                                  );
-                                },
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const RegisterScreen(),
+                                ),
+                              );
+                            },
                         ),
                       ],
                     ),

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'dashboard.dart';
+import 'login.dart';
+
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -105,7 +108,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: ElevatedButton(
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
-                        // TODO: Connect the registration API here.
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const DashboardScreen(),
+                          ),
+                          (route) => false,
+                        );
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -126,7 +134,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   children: [
                     const Text('Already have an account? '),
                     TextButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                        );
+                      },
                       child: const Text('Login'),
                     ),
                   ],

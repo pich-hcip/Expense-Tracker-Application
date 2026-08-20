@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'login.dart';
+import 'register.dart';
 
 // ===================================================
 // ONBOARDING SCREEN - Easy to understand Flutter code
@@ -115,9 +117,11 @@ class OnboardingScreen extends StatelessWidget {
       height: 55,
       child: ElevatedButton(
         onPressed: () {
-          // TODO: go to your Sign Up / Home screen
-          // Example:
-          // Navigator.push(context, MaterialPageRoute(builder: (_) => SignUpScreen()));
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const RegisterScreen(),
+            ),
+          );
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white,
@@ -140,9 +144,11 @@ class OnboardingScreen extends StatelessWidget {
   Widget _buildLoginText(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        // TODO: go to your Login screen
-        // Example:
-        // Navigator.push(context, MaterialPageRoute(builder: (_) => LoginScreen()));
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => const LoginScreen(),
+          ),
+        );
       },
       child: RichText(
         text: const TextSpan(
