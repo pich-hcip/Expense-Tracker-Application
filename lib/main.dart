@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'screens/get_start.dart';
+import 'screens/login.dart';
+import 'screens/register.dart';
+import 'screens/dashboard.dart';
+import 'screens/category.dart';
 
 void main() {
   runApp(const MyApp());
