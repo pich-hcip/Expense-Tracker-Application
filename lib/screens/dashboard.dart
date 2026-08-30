@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'category.dart';
+import 'transaction.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -66,12 +67,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
                 children: [
                   _buildHeader(),
-                  const SizedBox(height: 28),
-                  const _BalanceCard(),
                   const SizedBox(height: 22),
+                  const _BalanceCard(),
+                  const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -79,7 +80,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         'Recent Transactions',
                         style: TextStyle(
                           color: Color(0xFF211F20),
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -99,7 +100,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 5),
+                  const SizedBox(height: 2),
                   for (final transaction in _transaction)
                     _TransactionTile(transaction: transaction),
                 ],
@@ -107,7 +108,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             _BottomNavigation(
               selectedIndex: _selectedIndex,
-              onSelected: (index) => setState(() => _selectedIndex = index),
+              onSelected: (index) {
+                if (index == 1) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const TransactionPage(),
+                    ),
+                  );
+                  return;
+                }
+
+                setState(() => _selectedIndex = index);
+              },
             ),
           ],
         ),
@@ -118,8 +130,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildHeader() {
     return Row(
       children: [
-        _SquareButton(icon: Icons.menu, onTap: () {}),
-        const SizedBox(width: 13),
+        Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            image: const DecorationImage(
+              image: AssetImage('assets/images/profile.jpg'),
+              fit: BoxFit.cover,
+              alignment: Alignment(0, -0.2),
+            ),
+            border: Border.all(color: const Color(0xFFE8ECF3)),
+          ),
+        ),
+        const SizedBox(width: 10),
         const Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,15 +152,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 'Good Morning,',
                 style: TextStyle(
                   color: Color(0xFF888888),
-                  fontSize: 12,
+                fontSize: 10,
                 ),
               ),
               SizedBox(height: 2),
               Text(
-                'Alex Morgan',
+                'Kim Jennie',
                 style: TextStyle(
                   color: Color(0xFF201E1F),
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -144,7 +168,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         _SquareButton(
-          icon: Icons.notifications_none,
+          icon: Icons.notifications_none_rounded,
           showBadge: true,
           onTap: () {},
         ),
@@ -159,15 +183,19 @@ class _BalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+      padding: const EdgeInsets.fromLTRB(18, 17, 18, 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0061B7),
-        borderRadius: BorderRadius.circular(22),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2858D7), Color(0xFF173D9B)],
+        ),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: const [
           BoxShadow(
             color: Color(0x330061B7),
-            blurRadius: 9,
-            offset: Offset(0, 5),
+            blurRadius: 8,
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -176,21 +204,21 @@ class _BalanceCard extends StatelessWidget {
         children: [
           const Text(
             'Total Balance',
-            style: TextStyle(color: Color(0xFF8FC5F3), fontSize: 13),
+            style: TextStyle(color: Color(0xFFB8CCF8), fontSize: 10),
           ),
           const SizedBox(height: 3),
           const Text(
             '\$14,248.50',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 31,
+              fontSize: 25,
               height: 1.2,
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 14),
           const Divider(color: Color(0x337FC0F5), height: 1),
-          const SizedBox(height: 17),
+          const SizedBox(height: 12),
           Row(
             children: [
               const Expanded(
@@ -202,7 +230,7 @@ class _BalanceCard extends StatelessWidget {
                 ),
               ),
               Container(width: 1, height: 31, color: const Color(0x337FC0F5)),
-              const SizedBox(width: 20),
+              const SizedBox(width: 14),
               const Expanded(
                 child: _BalanceSummary(
                   label: 'Expenses',
@@ -237,27 +265,27 @@ class _BalanceSummary extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 31,
-          height: 31,
+          width: 28,
+          height: 28,
           decoration: const BoxDecoration(
             color: Color(0xFF1674C5),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: iconColor, size: 17),
+          child: Icon(icon, color: iconColor, size: 15),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               label,
-              style: const TextStyle(color: Color(0xFF9FCBF0), fontSize: 11),
+              style: const TextStyle(color: Color(0xFFB8CCF8), fontSize: 9),
             ),
             Text(
               amount,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 15,
+                fontSize: 13,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -276,23 +304,23 @@ class _TransactionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 7),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
           Container(
-            width: 43,
-            height: 43,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
               color: transaction.backgroundColor,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(11),
             ),
             child: Icon(
               transaction.icon,
               color: transaction.iconColor,
-              size: 23,
+              size: 20,
             ),
           ),
-          const SizedBox(width: 13),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,7 +331,7 @@ class _TransactionTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Color(0xFF333031),
-                    fontSize: 14,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -312,7 +340,7 @@ class _TransactionTile extends StatelessWidget {
                   transaction.date,
                   style: const TextStyle(
                     color: Color(0xFF999999),
-                    fontSize: 11,
+                    fontSize: 9,
                   ),
                 ),
               ],
@@ -325,7 +353,7 @@ class _TransactionTile extends StatelessWidget {
               color: transaction.isIncome
                   ? const Color(0xFF0CBF91)
                   : const Color(0xFFFF4352),
-              fontSize: 14,
+              fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -349,22 +377,22 @@ class _SquareButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFFF5F9FD),
-      borderRadius: BorderRadius.circular(12),
+      color: const Color(0xFFF3F7FC),
+      borderRadius: BorderRadius.circular(11),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: SizedBox(
-          width: 42,
-          height: 42,
+          width: 38,
+          height: 38,
           child: Stack(
             alignment: Alignment.center,
             children: [
-              Icon(icon, color: const Color(0xFF0061B7), size: 22),
+              Icon(icon, color: const Color(0xFF3478D4), size: 20),
               if (showBadge)
                 Positioned(
-                  right: 9,
-                  top: 8,
+                  right: 8,
+                  top: 7,
                   child: Container(
                     width: 7,
                     height: 7,
@@ -395,14 +423,14 @@ class _BottomNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     const items = [
       (Icons.home_outlined, 'Home'),
-      (Icons.list_alt_outlined, 'Transactions'),
+      (Icons.receipt_long_outlined, 'Transactions'),
       (Icons.account_balance_wallet_outlined, 'Wallet'),
-      (Icons.person_outline, 'Profile'),
+      (Icons.insert_chart_outlined_rounded, 'Report'),
     ];
 
     return Container(
-      height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+      height: 76,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: Color(0xFFEEEEEE))),
@@ -435,9 +463,9 @@ class _BottomNavigation extends StatelessWidget {
               },
               customBorder: const CircleBorder(),
               child: const SizedBox(
-                width: 52,
-                height: 52,
-                child: Icon(Icons.add, color: Colors.white, size: 31),
+                width: 54,
+                height: 54,
+                child: Icon(Icons.add, color: Colors.white, size: 32),
               ),
             ),
           ),
@@ -478,17 +506,19 @@ class _NavItem extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: SizedBox(
-        width: 54,
+        width: 60,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 2),
+            Icon(icon, color: color, size: 25),
+            const SizedBox(height: 4),
             Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.visible,
               style: TextStyle(
                 color: color,
-                fontSize: 9,
+                fontSize: 10,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
