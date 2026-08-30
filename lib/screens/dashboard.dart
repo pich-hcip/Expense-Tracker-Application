@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'category.dart';
 import 'transaction.dart';
+import 'wallet.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -113,6 +114,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (_) => const TransactionPage(),
+                    ),
+                  );
+                  return;
+                }
+
+                if (index == 2) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const WalletScreen(),
                     ),
                   );
                   return;

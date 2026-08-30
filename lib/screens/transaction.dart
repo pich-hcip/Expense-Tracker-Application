@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'category.dart';
+import 'wallet.dart';
 
 class TransactionPage extends StatefulWidget {
   const TransactionPage({super.key});
@@ -98,6 +99,9 @@ class _TransactionPageState extends State<TransactionPage> {
             ),
             _TransactionNavigation(
               onHome: () => Navigator.maybePop(context),
+              onWallet: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const WalletScreen()),
+              ),
               onAdd: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => const CategoryScreen(),
@@ -327,9 +331,14 @@ class _TransactionRow extends StatelessWidget {
 }
 
 class _TransactionNavigation extends StatelessWidget {
-  const _TransactionNavigation({required this.onHome, required this.onAdd});
+  const _TransactionNavigation({
+    required this.onHome,
+    required this.onWallet,
+    required this.onAdd,
+  });
 
   final VoidCallback onHome;
+  final VoidCallback onWallet;
   final VoidCallback onAdd;
 
   @override
@@ -362,9 +371,10 @@ class _TransactionNavigation extends StatelessWidget {
               ),
             ),
           ),
-          const _NavItem(
+          _NavItem(
             icon: Icons.account_balance_wallet_outlined,
             label: 'Wallet',
+            onTap: onWallet,
           ),
           const _NavItem(
             icon: Icons.insert_chart_outlined_rounded,

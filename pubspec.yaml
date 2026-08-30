@@ -59,6 +59,9 @@ flutter:
 
   assets:
     - assets/images/profile.jpg
+    - assets/images/acleda_bank.png
+    - assets/images/aba_bank.jpg
+    - assets/images/wing_bank.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
