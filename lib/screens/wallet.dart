@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'add_wallet.dart';
 import 'category.dart';
 import 'transaction.dart';
+import 'transfer.dart';
 
 class WalletScreen extends StatelessWidget {
   const WalletScreen({super.key});
@@ -64,11 +66,11 @@ class WalletScreen extends StatelessWidget {
                   ],
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Add wallet coming soon')),
-                      );
-                    },
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const AddWalletScreen(),
+                      ),
+                    ),
                     icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
                     label: const Text('Add Wallets'),
                     style: OutlinedButton.styleFrom(
@@ -311,6 +313,15 @@ class _WalletTile extends StatelessWidget {
               size: 18,
             ),
             onSelected: (action) {
+              if (action == _WalletAction.transfer) {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const TransferScreen(),
+                  ),
+                );
+                return;
+              }
+
               final actionName = switch (action) {
                 _WalletAction.edit => 'Edit',
                 _WalletAction.transfer => 'Transfer',
