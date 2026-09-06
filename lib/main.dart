@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/get_start.dart';
+import 'screens/login.dart';
 void main() {
   runApp(const MyApp());
 }
@@ -19,8 +19,8 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
 
-      // Start with Get Started Page
-      home: const GetStartScreen(),
+      // Start with Login Page
+      home: const LoginScreen(),
     );
   }
 }
