@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'Profile.dart';
 import 'category.dart';
 import 'transaction.dart';
 import 'wallet.dart';
@@ -13,6 +14,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
+  final _pageController = PageController();
 
   static const List<_TransactionItem> _transaction = [
     _TransactionItem(
@@ -60,6 +62,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   ];
 
   @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -67,69 +75,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           children: [
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+              child: PageView(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  if (_selectedIndex != index) {
+                    setState(() => _selectedIndex = index);
+                  }
+                },
                 children: [
-                  _buildHeader(),
-                  const SizedBox(height: 22),
-                  const _BalanceCard(),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Recent Transactions',
-                        style: TextStyle(
-                          color: Color(0xFF211F20),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {},
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF0061B7),
-                          padding: const EdgeInsets.symmetric(horizontal: 2),
-                        ),
-                        child: const Text(
-                          'See All',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
+                  _buildHomePage(),
+                  TransactionPage(
+                    embedded: true,
+                    onBack: () => _selectPage(0),
                   ),
-                  const SizedBox(height: 2),
-                  for (final transaction in _transaction)
-                    _TransactionTile(transaction: transaction),
+                  const WalletScreen(embedded: true),
+                  const _ReportPage(),
                 ],
               ),
             ),
             _BottomNavigation(
               selectedIndex: _selectedIndex,
-              onSelected: (index) {
-                if (index == 1) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const TransactionPage(),
-                    ),
-                  );
-                  return;
-                }
-
-                if (index == 2) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const WalletScreen(),
-                    ),
-                  );
-                  return;
-                }
-
-                setState(() => _selectedIndex = index);
-              },
+              onSelected: _selectPage,
             ),
           ],
         ),
@@ -137,20 +103,76 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Widget _buildHomePage() {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      children: [
+        _buildHeader(),
+        const SizedBox(height: 22),
+        const _BalanceCard(),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Recent Transactions',
+              style: TextStyle(
+                color: Color(0xFF211F20),
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            TextButton(
+              onPressed: () => _selectPage(1),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF0061B7),
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+              ),
+              child: const Text(
+                'See All',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 2),
+        for (final transaction in _transaction)
+          _TransactionTile(transaction: transaction),
+      ],
+    );
+  }
+
+  void _selectPage(int index) {
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeInOutCubic,
+    );
+  }
+
   Widget _buildHeader() {
     return Row(
       children: [
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            image: const DecorationImage(
-              image: AssetImage('assets/images/profile.jpg'),
-              fit: BoxFit.cover,
-              alignment: Alignment(0, -0.2),
+        Semantics(
+          button: true,
+          label: 'Open profile',
+          child: GestureDetector(
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const AccountPage()),
             ),
-            border: Border.all(color: const Color(0xFFE8ECF3)),
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                image: const DecorationImage(
+                  image: AssetImage('assets/images/profile.jpg'),
+                  fit: BoxFit.cover,
+                  alignment: Alignment(0, -0.2),
+                ),
+                border: Border.all(color: const Color(0xFFE8ECF3)),
+              ),
+            ),
           ),
         ),
         const SizedBox(width: 10),
@@ -183,6 +205,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
           onTap: () {},
         ),
       ],
+    );
+  }
+}
+
+class _ReportPage extends StatelessWidget {
+  const _ReportPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.insert_chart_outlined_rounded, size: 52, color: Color(0xFF2458C6)),
+          SizedBox(height: 12),
+          Text(
+            'Reports',
+            style: TextStyle(
+              color: Color(0xFF17213D),
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          SizedBox(height: 5),
+          Text('Your spending report will appear here.'),
+        ],
+      ),
     );
   }
 }
@@ -520,7 +569,12 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 25),
+            AnimatedScale(
+              scale: selected ? 1.12 : 1,
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutBack,
+              child: Icon(icon, color: color, size: 25),
+            ),
             const SizedBox(height: 4),
             Text(
               label,

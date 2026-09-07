@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 
 import 'add_wallet.dart';
 import 'category.dart';
+import 'edit_wallet.dart';
 import 'transaction.dart';
-import 'transfer.dart';
 
 class WalletScreen extends StatelessWidget {
-  const WalletScreen({super.key});
+  const WalletScreen({
+    super.key,
+    this.embedded = false,
+  });
+
+  final bool embedded;
 
   static const _wallets = [
     _Wallet('Cash', 'Cash in hand', '\$ 350.00', Icons.account_balance_wallet, Color(0xFF10B981)),
@@ -38,10 +43,7 @@ class WalletScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
+    final content = Column(
           children: [
             Expanded(
               child: ListView(
@@ -92,7 +94,7 @@ class WalletScreen extends StatelessWidget {
                 ],
               ),
             ),
-            _WalletNavigation(
+            if (!embedded) _WalletNavigation(
               onHome: () => Navigator.maybePop(context),
               onTransactions: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
@@ -106,8 +108,15 @@ class WalletScreen extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
+    );
+
+    if (embedded) {
+      return ColoredBox(color: Colors.white, child: content);
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(child: content),
     );
   }
 }
@@ -313,10 +322,15 @@ class _WalletTile extends StatelessWidget {
               size: 18,
             ),
             onSelected: (action) {
-              if (action == _WalletAction.transfer) {
+              if (action == _WalletAction.edit) {
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (_) => const TransferScreen(),
+                    builder: (_) => EditWalletScreen(
+                      name: wallet.name,
+                      description: wallet.subtitle,
+                      balance: wallet.amount.replaceAll(RegExp(r'[^0-9.]'), ''),
+                      walletType: wallet.name == 'Cash' ? 'Cash' : 'Bank',
+                    ),
                   ),
                 );
                 return;
@@ -324,7 +338,6 @@ class _WalletTile extends StatelessWidget {
 
               final actionName = switch (action) {
                 _WalletAction.edit => 'Edit',
-                _WalletAction.transfer => 'Transfer',
                 _WalletAction.delete => 'Delete',
               };
               ScaffoldMessenger.of(context).showSnackBar(
@@ -338,15 +351,6 @@ class _WalletTile extends StatelessWidget {
                 child: _WalletMenuItem(
                   icon: Icons.edit_outlined,
                   label: 'Edit',
-                  color: Color(0xFF2874BA),
-                ),
-              ),
-              PopupMenuItem(
-                value: _WalletAction.transfer,
-                height: 36,
-                child: _WalletMenuItem(
-                  icon: Icons.swap_horiz_rounded,
-                  label: 'Transfer',
                   color: Color(0xFF2874BA),
                 ),
               ),
@@ -513,4 +517,4 @@ class _Wallet {
   final String? assetPath;
 }
 
-enum _WalletAction { edit, transfer, delete }
+enum _WalletAction { edit, delete }

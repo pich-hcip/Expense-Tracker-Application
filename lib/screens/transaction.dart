@@ -1,17 +1,34 @@
 import 'package:flutter/material.dart';
 
 import 'category.dart';
+import 'expense_total.dart';
+import 'income_total.dart';
 import 'wallet.dart';
 
 class TransactionPage extends StatefulWidget {
-  const TransactionPage({super.key});
+  const TransactionPage({
+    super.key,
+    this.embedded = false,
+    this.onBack,
+    this.initialFilter = 'All',
+  });
+
+  final bool embedded;
+  final VoidCallback? onBack;
+  final String initialFilter;
 
   @override
   State<TransactionPage> createState() => _TransactionPageState();
 }
 
 class _TransactionPageState extends State<TransactionPage> {
-  String _filter = 'All';
+  late String _filter;
+
+  @override
+  void initState() {
+    super.initState();
+    _filter = widget.initialFilter;
+  }
 
   static const _sections = [
     _TransactionSection('Today', [
@@ -73,12 +90,11 @@ class _TransactionPageState extends State<TransactionPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _Header(onBack: () => Navigator.maybePop(context)),
+    final content = Column(
+      children: [
+            _Header(
+              onBack: widget.onBack ?? () => Navigator.maybePop(context),
+            ),
             _FilterBar(
               selected: _filter,
               onSelected: (value) => setState(() => _filter = value),
@@ -97,7 +113,7 @@ class _TransactionPageState extends State<TransactionPage> {
                 },
               ),
             ),
-            _TransactionNavigation(
+            if (!widget.embedded) _TransactionNavigation(
               onHome: () => Navigator.maybePop(context),
               onWallet: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(builder: (_) => const WalletScreen()),
@@ -109,8 +125,15 @@ class _TransactionPageState extends State<TransactionPage> {
               ),
             ),
           ],
-        ),
-      ),
+    );
+
+    if (widget.embedded) {
+      return ColoredBox(color: Colors.white, child: content);
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(child: content),
     );
   }
 
@@ -275,10 +298,24 @@ class _TransactionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 7),
-      child: Row(
-        children: [
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: item.title == 'Salary'
+            ? () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const IncomeScreen(),
+                  ),
+                )
+            : () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const ExpenseTotalScreen(),
+                  ),
+                ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 7),
+          child: Row(
+            children: [
           Container(
             width: 42,
             height: 42,
@@ -324,7 +361,9 @@ class _TransactionRow extends StatelessWidget {
               ),
             ],
           ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }

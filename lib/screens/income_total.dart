@@ -1,239 +1,211 @@
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false, // hides "DEBUG" banner
-      home: const IncomeScreen(),
-    );
-  }
-}
-
-
-// A simple "blueprint" for one transaction.
-// Instead of using Map<String, String> everywhere,
-// a class makes the code easier to read and safer to use.
-
-class Transaction {
-  final String title;
-  final String date;
-  final String amount;
-
-  const Transaction({
-    required this.title,
-    required this.date,
-    required this.amount,
-  });
-}
+import 'transaction.dart';
 
 class IncomeScreen extends StatelessWidget {
   const IncomeScreen({super.key});
-
-  // Main color used for the icons in this screen
-  static const Color greenColor = Color(0xFF1DB975);
-
-  // Sample data. Later, you can replace this list with real data
-  // coming from a database or an API.
-  static const List<Transaction> transactions = [
-    Transaction(title: 'Salary', date: 'August 20, 2026', amount: '+\$1,350.00'),
-    Transaction(title: 'Freelance Work', date: 'August 20, 2026', amount: '+\$13.25'),
-    Transaction(title: 'Investment Income', date: 'August 20, 2026', amount: '+\$13.25'),
-    Transaction(title: 'Side Hustle', date: 'August 20, 2026', amount: '+\$13.25'),
-    Transaction(title: 'Bonus', date: 'August 20, 2026', amount: '+\$13.25'),
-    Transaction(title: 'Cashback', date: 'August 20, 2026', amount: '+\$13.25'),
-  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ---------- Top bar (back button + title) ----------
-              _buildTopBar(context),
-
-              const SizedBox(height: 20),
-
-              // ---------- Total Income Card ----------
-              _buildTotalIncomeCard(),
-
-              const SizedBox(height: 24),
-
-              // ---------- "Recent Transactions" label ----------
-              const Text(
-                'Recent Transactions',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+          children: [
+            _Header(onBack: () => Navigator.maybePop(context)),
+            const SizedBox(height: 20),
+            Container(
+              constraints: const BoxConstraints(minHeight: 538),
+              padding: const EdgeInsets.fromLTRB(18, 21, 18, 18),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFD8DCE3)),
               ),
-
-              const SizedBox(height: 12),
-
-              // ---------- List of transactions ----------
-              // Expanded lets the list take the remaining space and scroll
-              // if there are more items than fit on the screen.
-              Expanded(
-                child: ListView.builder(
-                  itemCount: transactions.length,
-                  itemBuilder: (context, index) {
-                    return _buildTransactionRow(transactions[index]);
-                  },
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _IncomeSummary(),
+                  const SizedBox(height: 44),
+                  const Text(
+                    'Recent Transactions',
+                    style: TextStyle(
+                      color: Color(0xFF292F3B),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  const _IncomeRow(),
+                  const SizedBox(height: 255),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 42,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const TransactionPage(
+                            initialFilter: 'Income',
+                          ),
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        elevation: 0,
+                        backgroundColor: const Color(0xFF214DBD),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(7),
+                        ),
+                      ),
+                      child: const Text(
+                        'View All',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
+}
 
+class _Header extends StatelessWidget {
+  const _Header({required this.onBack});
 
-  // Small reusable functions below (easy to read)
+  final VoidCallback onBack;
 
-  // Top bar with a round back button and the "Income" title
-  Widget _buildTopBar(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     return Row(
       children: [
-        // Round back button
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.blue.shade50,
-            shape: BoxShape.circle,
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.blue),
-            onPressed: () {
-              // Go back to the previous screen
-              Navigator.pop(context);
-            },
+        Material(
+          color: const Color(0xFFF3F7FD),
+          borderRadius: BorderRadius.circular(10),
+          child: InkWell(
+            onTap: onBack,
+            borderRadius: BorderRadius.circular(10),
+            child: const SizedBox(
+              width: 38,
+              height: 38,
+              child: Icon(Icons.arrow_back, color: Color(0xFF2458C6)),
+            ),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 13),
         const Text(
           'Income',
           style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
+            color: Color(0xFF202634),
+            fontSize: 19,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ],
     );
   }
+}
 
-  // White rounded card showing the total income
-  Widget _buildTotalIncomeCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade300), // light border line
-      ),
-      child: Row(
-        children: [
-          // Green circle icon with a dollar sign
-          _buildGreenCircleIcon(size: 55, iconSize: 26),
+class _IncomeSummary extends StatelessWidget {
+  const _IncomeSummary();
 
-          const SizedBox(width: 16),
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      children: [
+        CircleAvatar(
+          radius: 31,
+          backgroundColor: Color(0xFF12B981),
+          child: Text(
+            '\$',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 42,
+              height: 1,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        SizedBox(width: 15),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Total Income', style: TextStyle(color: Color(0xFF303746), fontSize: 13)),
+            SizedBox(height: 1),
+            Text(
+              '\$ 1,350.00',
+              style: TextStyle(
+                color: Color(0xFF111827),
+                fontSize: 19,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              '40% of total expense',
+              style: TextStyle(color: Color(0xFF9AA1AE), fontSize: 9),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
 
-          // Text column: label, big amount, small note
-          Column(
+class _IncomeRow extends StatelessWidget {
+  const _IncomeRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      children: [
+        CircleAvatar(
+          radius: 18,
+          backgroundColor: Color(0xFF12B981),
+          child: Text(
+            '\$',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 23,
+              height: 1,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        SizedBox(width: 12),
+        Expanded(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               Text(
-                'Total Income',
-                style: TextStyle(fontSize: 14, color: Colors.black87),
+                'Salary',
+                style: TextStyle(
+                  color: Color(0xFF303746),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-              SizedBox(height: 4),
+              SizedBox(height: 3),
               Text(
-                '\$ 1,350.00',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 4),
-              Text(
-                '40% of total expense',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                'August 20, 2026',
+                style: TextStyle(color: Color(0xFF9AA1AE), fontSize: 9),
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  // One row inside the "Recent Transactions" list
-  Widget _buildTransactionRow(Transaction transaction) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        children: [
-          // Small green circle icon
-          _buildGreenCircleIcon(size: 45, iconSize: 20),
-
-          const SizedBox(width: 14),
-
-          // Title + date (takes up the remaining space)
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  transaction.title,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  transaction.date,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
+        ),
+        Text(
+          '+\$1,350.00',
+          style: TextStyle(
+            color: Color(0xFF222936),
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
           ),
-
-          // Amount on the right side
-          Text(
-            transaction.amount,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Reusable green circle with a dollar sign icon.
-  // Used for both the big card icon and the small list icons.
-  Widget _buildGreenCircleIcon({required double size, required double iconSize}) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: const BoxDecoration(
-        color: greenColor,
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        Icons.attach_money,
-        color: Colors.white,
-        size: iconSize,
-      ),
+        ),
+      ],
     );
   }
 }

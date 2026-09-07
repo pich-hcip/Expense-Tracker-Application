@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
+import 'edit_profile.dart';
+
 class AccountPage extends StatelessWidget {
   const AccountPage({super.key});
 
   static const Color primaryBlue = Color(0xFF2458C6);
-  static const Color darkBlue = Color(0xFF172A64);
   static const Color textColor = Color(0xFF17213D);
-  static const Color greyText = Color(0xFF667085);
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +14,7 @@ class AccountPage extends StatelessWidget {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(21, 22, 21, 25),
+          padding: const EdgeInsets.fromLTRB(22, 22, 22, 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -49,6 +49,20 @@ class AccountPage extends StatelessWidget {
                       color: textColor,
                     ),
                   ),
+                  const Spacer(),
+                  IconButton(
+                    tooltip: 'Edit profile',
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const EditProfilePage(),
+                      ),
+                    ),
+                    icon: const Icon(
+                      Icons.edit_outlined,
+                      size: 25,
+                      color: primaryBlue,
+                    ),
+                  ),
                 ],
               ),
 
@@ -57,8 +71,8 @@ class AccountPage extends StatelessWidget {
               // ================= PROFILE CARD =================
               Container(
                 width: double.infinity,
-                height: 100,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                height: 98,
+                padding: const EdgeInsets.symmetric(horizontal: 17),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
@@ -74,17 +88,16 @@ class AccountPage extends StatelessWidget {
                   children: [
                     // Profile Image
                     Container(
-                      width: 64,
-                      height: 64,
+                      width: 62,
+                      height: 62,
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
                       ),
                       child: const ClipOval(
-                        child: CircleAvatar(
-                          radius: 32,
-                          backgroundImage: NetworkImage(
-                            'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
-                          ),
+                        child: Image(
+                          image: AssetImage('assets/images/profile.jpg'),
+                          fit: BoxFit.cover,
+                          alignment: Alignment(0, -0.2),
                         ),
                       ),
                     ),
@@ -118,30 +131,7 @@ class AccountPage extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 20),
-
-              // ================= BUTTONS =================
-              Row(
-                children: [
-                  Expanded(
-                    child: _actionButton(
-                      icon: Icons.edit_note,
-                      text: 'Edit Profile',
-                      onTap: () {},
-                    ),
-                  ),
-                  const SizedBox(width: 34),
-                  Expanded(
-                    child: _actionButton(
-                      icon: Icons.settings_outlined,
-                      text: 'Setting',
-                      onTap: () {},
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 25),
+              const SizedBox(height: 18),
 
               // ================= MENU =================
               _menuItem(
@@ -191,7 +181,7 @@ class AccountPage extends StatelessWidget {
                 onTap: () {},
               ),
 
-              const SizedBox(height: 43),
+              const SizedBox(height: 42),
 
               // ================= SIGN OUT =================
               _menuItem(
@@ -204,53 +194,6 @@ class AccountPage extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  // =========================================================
-  // ACTION BUTTON
-  // =========================================================
-  static Widget _actionButton({
-    required IconData icon,
-    required String text,
-    required VoidCallback onTap,
-  }) {
-    return SizedBox(
-      height: 36,
-      child: OutlinedButton(
-        onPressed: onTap,
-        style: OutlinedButton.styleFrom(
-          backgroundColor: Colors.white,
-          side: const BorderSide(
-            color: Color(0xFFE7E7E7),
-          ),
-          elevation: 1,
-          shadowColor: Colors.black12,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          padding: EdgeInsets.zero,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 19,
-              color: primaryBlue,
-            ),
-            const SizedBox(width: 7),
-            Text(
-              text,
-              style: const TextStyle(
-                fontSize: 13,
-                color: greyText,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ],
         ),
       ),
     );
