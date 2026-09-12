@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/login.dart';
+import 'screens/report.dart';
 void main() {
   runApp(const MyApp());
 }
@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
       ),
 
       // Start with Login Page
-      home: const LoginScreen(),
+      home: const ReportScreen(),
     );
   }
 }
