@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'screens/login.dart';
-void main() {
+import 'screens/dashboard.dart';
+import 'services/api_service.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ApiService.instance.initialize();
   runApp(const MyApp());
 }
 
@@ -19,8 +24,9 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
 
-      // Start with Login Page
-      home: const LoginScreen(),
+      home: ApiService.instance.isAuthenticated
+          ? const DashboardScreen()
+          : const LoginScreen(),
     );
   }
 }

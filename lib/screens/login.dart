@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'dashboard.dart';
 import 'register.dart';
+import '../services/api_service.dart';
 
 // This file has TWO screens in it:
 // 1. LoginScreen         -> the main login page
@@ -18,6 +19,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordHidden = true;
+  bool _isLoading = false;
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -136,14 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   height: 55,
 
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const DashboardScreen(),
-                        ),
-                        (route) => false,
-                      );
-                    },
+                    onPressed: _isLoading ? null : _login,
 
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
@@ -153,10 +148,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
 
-                    child: const Text(
-                      'Login',
-                      style: TextStyle(fontSize: 18, color: Colors.white),
-                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Login',
+                            style: TextStyle(fontSize: 18, color: Colors.white),
+                          ),
                   ),
                 ),
 
@@ -206,6 +210,32 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  Future<void> _login() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    if (email.isEmpty || password.isEmpty) {
+      _showMessage('Please enter your email and password.');
+      return;
+    }
+    setState(() => _isLoading = true);
+    try {
+      await ApiService.instance.login(email: email, password: password);
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(builder: (_) => const DashboardScreen()),
+        (route) => false,
+      );
+    } on ApiException catch (error) {
+      if (mounted) _showMessage(error.message);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -231,6 +261,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   // shows dots (hidden) or plain text (visible).
   bool _isNewPasswordHidden = true;
   bool _isConfirmPasswordHidden = true;
+  bool _isLoading = false;
 
   // Controllers let us read what the user typed in each field.
   final TextEditingController _emailController = TextEditingController();
@@ -415,45 +446,64 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(30),
-          onTap: () {
-            // Read what the user typed
-            final email = _emailController.text.trim();
-            final newPassword = _newPasswordController.text;
-            final confirmPassword = _confirmPasswordController.text;
-
-            // Check 1: any field empty?
-            if (email.isEmpty ||
-                newPassword.isEmpty ||
-                confirmPassword.isEmpty) {
-              _showMessage('Please input fields.');
-              return; // stop here, do NOT go to the next screen
-            }
-
-            // Check 2: do the two passwords match? 
-            if (newPassword != confirmPassword) {
-              _showMessage('Passwords do not match.');
-              return; // stop here too
-            }
-
-            //  All checks passed, safe to continue 
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute<void>(builder: (_) => const DashboardScreen()),
-              (route) => false,
-            );
-          },
-          child: const Center(
-            child: Text(
-              'Reset Password',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
+          onTap: _isLoading ? null : _resetPassword,
+          child: Center(
+            child: _isLoading
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text(
+                    'Reset Password',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _resetPassword() async {
+    final email = _emailController.text.trim();
+    final newPassword = _newPasswordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+    if (email.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty) {
+      _showMessage('Please complete all fields.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      _showMessage('Password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword != confirmPassword) {
+      _showMessage('Passwords do not match.');
+      return;
+    }
+    setState(() => _isLoading = true);
+    try {
+      await ApiService.instance.resetPassword(
+        email: email,
+        newPassword: newPassword,
+      );
+      if (!mounted) return;
+      _showMessage('Password reset successfully. Please log in.');
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    } on ApiException catch (error) {
+      if (mounted) _showMessage(error.message);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   // Small helper to show a message at the bottom of the screen

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../models/transaction_data.dart';
+import 'report.dart';
 import 'category.dart';
 import 'expense_total.dart';
 import 'income_total.dart';
@@ -30,101 +32,40 @@ class _TransactionPageState extends State<TransactionPage> {
     _filter = widget.initialFilter;
   }
 
-  static const _sections = [
-    _TransactionSection('Today', [
-      _Transaction(
-        title: 'Lunch',
-        category: 'Food',
-        amount: '-\$13.50',
-        date: 'August 20, 2026',
-        icon: Icons.restaurant_rounded,
-        color: Color(0xFFFF7618),
-      ),
-      _Transaction(
-        title: 'Salary',
-        category: 'Income',
-        amount: '+\$1,350.00',
-        date: 'August 20, 2026',
-        icon: Icons.attach_money_rounded,
-        color: Color(0xFF16B98B),
-        income: true,
-      ),
-      _Transaction(
-        title: 'Coffee',
-        category: 'Food',
-        amount: '-\$13.50',
-        date: 'August 20, 2026',
-        icon: Icons.coffee_rounded,
-        color: Color(0xFFFF7618),
-      ),
-    ]),
-    _TransactionSection('Yesterday', [
-      _Transaction(
-        title: 'Taxi',
-        category: 'Food',
-        amount: '-\$13.50',
-        date: 'August 20, 2026',
-        icon: Icons.local_taxi_rounded,
-        color: Color(0xFFFF7618),
-      ),
-      _Transaction(
-        title: 'Electricity Bill',
-        category: 'Food',
-        amount: '-\$50.50',
-        date: 'August 20, 2026',
-        icon: Icons.lightbulb_rounded,
-        color: Color(0xFFFF7618),
-      ),
-    ]),
-    _TransactionSection('August 25, 2026', [
-      _Transaction(
-        title: 'Clothes',
-        category: 'Food',
-        amount: '-\$13.50',
-        date: 'August 20, 2026',
-        icon: Icons.checkroom_rounded,
-        color: Color(0xFFFF7618),
-      ),
-    ]),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final content = Column(
       children: [
-            _Header(
-              onBack: widget.onBack ?? () => Navigator.maybePop(context),
+        _Header(onBack: widget.onBack ?? () => Navigator.maybePop(context)),
+        _FilterBar(
+          selected: _filter,
+          onSelected: (value) => setState(() => _filter = value),
+        ),
+        const Divider(height: 1, color: Color(0xFFEFEFEF)),
+        Expanded(
+          child: ListView.builder(
+            padding: EdgeInsets.zero,
+            itemCount: _visibleSections.length,
+            itemBuilder: (context, index) {
+              final section = _visibleSections[index];
+              return _TransactionGroup(
+                section: section,
+                showDivider: index != _visibleSections.length - 1,
+              );
+            },
+          ),
+        ),
+        if (!widget.embedded)
+          _TransactionNavigation(
+            onHome: () => Navigator.maybePop(context),
+            onWallet: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const WalletScreen()),
             ),
-            _FilterBar(
-              selected: _filter,
-              onSelected: (value) => setState(() => _filter = value),
+            onAdd: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const CategoryScreen()),
             ),
-            const Divider(height: 1, color: Color(0xFFEFEFEF)),
-            Expanded(
-              child: ListView.builder(
-                padding: EdgeInsets.zero,
-                itemCount: _visibleSections.length,
-                itemBuilder: (context, index) {
-                  final section = _visibleSections[index];
-                  return _TransactionGroup(
-                    section: section,
-                    showDivider: index != _visibleSections.length - 1,
-                  );
-                },
-              ),
-            ),
-            if (!widget.embedded) _TransactionNavigation(
-              onHome: () => Navigator.maybePop(context),
-              onWallet: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(builder: (_) => const WalletScreen()),
-              ),
-              onAdd: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const CategoryScreen(),
-                ),
-              ),
-            ),
-          ],
+          ),
+      ],
     );
 
     if (widget.embedded) {
@@ -137,12 +78,12 @@ class _TransactionPageState extends State<TransactionPage> {
     );
   }
 
-  List<_TransactionSection> get _visibleSections {
-    if (_filter == 'All') return _sections;
+  List<TransactionSection> get _visibleSections {
+    if (_filter == 'All') return transactionSections;
     final wantsIncome = _filter == 'Income';
-    return _sections
+    return transactionSections
         .map(
-          (section) => _TransactionSection(
+          (section) => TransactionSection(
             section.label,
             section.items.where((item) => item.income == wantsIncome).toList(),
           ),
@@ -261,7 +202,7 @@ class _FilterButton extends StatelessWidget {
 class _TransactionGroup extends StatelessWidget {
   const _TransactionGroup({required this.section, required this.showDivider});
 
-  final _TransactionSection section;
+  final TransactionSection section;
   final bool showDivider;
 
   @override
@@ -294,7 +235,7 @@ class _TransactionGroup extends StatelessWidget {
 class _TransactionRow extends StatelessWidget {
   const _TransactionRow({required this.item});
 
-  final _Transaction item;
+  final TransactionRecord item;
 
   @override
   Widget build(BuildContext context) {
@@ -303,64 +244,71 @@ class _TransactionRow extends StatelessWidget {
       child: InkWell(
         onTap: item.title == 'Salary'
             ? () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const IncomeScreen(),
-                  ),
-                )
+                MaterialPageRoute<void>(builder: (_) => const IncomeScreen()),
+              )
             : () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const ExpenseTotalScreen(),
-                  ),
+                MaterialPageRoute<void>(
+                  builder: (_) => const ExpenseTotalScreen(),
                 ),
+              ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 7),
           child: Row(
             children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(color: item.color, shape: BoxShape.circle),
-            child: Icon(item.icon, color: Colors.white, size: 23),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.title,
-                  style: const TextStyle(
-                    color: Color(0xFF292929),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: item.color,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(item.icon, color: Colors.white, size: 23),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      style: const TextStyle(
+                        color: Color(0xFF292929),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      item.category,
+                      style: const TextStyle(
+                        color: Color(0xFF777777),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    item.amount,
+                    style: const TextStyle(
+                      color: Color(0xFF242424),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  item.category,
-                  style: const TextStyle(color: Color(0xFF777777), fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                item.amount,
-                style: const TextStyle(
-                  color: Color(0xFF242424),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
+                  const SizedBox(height: 5),
+                  Text(
+                    item.date,
+                    style: const TextStyle(
+                      color: Color(0xFF777777),
+                      fontSize: 9,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 5),
-              Text(
-                item.date,
-                style: const TextStyle(color: Color(0xFF777777), fontSize: 9),
-              ),
-            ],
-          ),
             ],
           ),
         ),
@@ -415,9 +363,12 @@ class _TransactionNavigation extends StatelessWidget {
             label: 'Wallet',
             onTap: onWallet,
           ),
-          const _NavItem(
+          _NavItem(
             icon: Icons.insert_chart_outlined_rounded,
             label: 'Report',
+            onTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute<void>(builder: (_) => const ReportPage())),
           ),
         ],
       ),
@@ -464,31 +415,4 @@ class _NavItem extends StatelessWidget {
       ),
     );
   }
-}
-
-class _TransactionSection {
-  const _TransactionSection(this.label, this.items);
-
-  final String label;
-  final List<_Transaction> items;
-}
-
-class _Transaction {
-  const _Transaction({
-    required this.title,
-    required this.category,
-    required this.amount,
-    required this.date,
-    required this.icon,
-    required this.color,
-    this.income = false,
-  });
-
-  final String title;
-  final String category;
-  final String amount;
-  final String date;
-  final IconData icon;
-  final Color color;
-  final bool income;
 }

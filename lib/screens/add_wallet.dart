@@ -73,7 +73,7 @@ class _AddWalletScreenState extends State<AddWalletScreen> {
                     const _FieldLabel('Bank / Provider'),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
-                      value: _bank,
+                      initialValue: _bank,
                       decoration: _decoration('').copyWith(
                         prefixIcon: Padding(
                           padding: const EdgeInsets.all(8),
@@ -132,7 +132,7 @@ class _AddWalletScreenState extends State<AddWalletScreen> {
                             const _FieldLabel('Currency'),
                             const SizedBox(height: 6),
                             DropdownButtonFormField<String>(
-                              value: _currency,
+                              initialValue: _currency,
                               decoration: _decoration('').copyWith(
                                 prefixIcon: const Icon(
                                   Icons.attach_money_rounded,

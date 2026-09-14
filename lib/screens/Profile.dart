@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'edit_profile.dart';
+import 'login.dart';
+import '../services/api_service.dart';
 
 class AccountPage extends StatelessWidget {
   const AccountPage({super.key});
@@ -105,27 +107,33 @@ class AccountPage extends StatelessWidget {
                     const SizedBox(width: 16),
 
                     // Name + Email
-                    const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Kim Jennie',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            ApiService.instance.currentUserName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 7),
-                        Text(
-                          'janniekim@gmail.com',
-                          style: TextStyle(
-                            color: Color(0xFFD9E1FF),
-                            fontSize: 12,
+                          const SizedBox(height: 7),
+                          Text(
+                            ApiService.instance.currentUserEmail,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFFD9E1FF),
+                              fontSize: 12,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -307,9 +315,7 @@ class AccountPage extends StatelessWidget {
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
+              onPressed: () => _logout(context),
               child: const Text(
                 'Sign Out',
                 style: TextStyle(
@@ -321,5 +327,22 @@ class AccountPage extends StatelessWidget {
         );
       },
     );
+  }
+
+  static Future<void> _logout(BuildContext dialogContext) async {
+    final navigator = Navigator.of(dialogContext, rootNavigator: true);
+    try {
+      await ApiService.instance.logout();
+      if (!dialogContext.mounted) return;
+      navigator.pushAndRemoveUntil(
+        MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    } catch (_) {
+      if (!dialogContext.mounted) return;
+      ScaffoldMessenger.of(dialogContext).showSnackBar(
+        const SnackBar(content: Text('Could not sign out. Please try again.')),
+      );
+    }
   }
 }

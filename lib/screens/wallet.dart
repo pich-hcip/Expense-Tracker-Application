@@ -4,17 +4,23 @@ import 'add_wallet.dart';
 import 'category.dart';
 import 'edit_wallet.dart';
 import 'transaction.dart';
+import 'report.dart';
+import 'budget.dart';
+import '../services/budget_service.dart';
 
 class WalletScreen extends StatelessWidget {
-  const WalletScreen({
-    super.key,
-    this.embedded = false,
-  });
+  const WalletScreen({super.key, this.embedded = false});
 
   final bool embedded;
 
   static const _wallets = [
-    _Wallet('Cash', 'Cash in hand', '\$ 350.00', Icons.account_balance_wallet, Color(0xFF10B981)),
+    _Wallet(
+      'Cash',
+      'Cash in hand',
+      '\$ 350.00',
+      Icons.account_balance_wallet,
+      Color(0xFF10B981),
+    ),
     _Wallet(
       'ACLEDA Bank',
       'ACLEDA Account',
@@ -44,70 +50,72 @@ class WalletScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final content = Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-                children: [
-                  const _WalletHeader(),
-                  const SizedBox(height: 14),
-                  const _WalletBalanceCard(),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'My Wallets',
-                    style: TextStyle(
-                      color: Color(0xFF262626),
-                      fontSize: 14,
+      children: [
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+            children: [
+              const _WalletHeader(),
+              const SizedBox(height: 14),
+              const _WalletBalanceCard(),
+              const SizedBox(height: 22),
+              const _BudgetCard(),
+              const SizedBox(height: 28),
+              const Text(
+                'My Wallets',
+                style: TextStyle(
+                  color: Color(0xFF262626),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 12),
+              for (final wallet in _wallets) ...[
+                _WalletTile(wallet: wallet),
+                const SizedBox(height: 12),
+              ],
+              const SizedBox(height: 12),
+              CustomPaint(
+                painter: _DashedBorderPainter(),
+                child: OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const AddWalletScreen(),
+                    ),
+                  ),
+                  icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
+                  label: const Text('Add Wallets'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF1264B5),
+                    side: const BorderSide(
+                      color: Colors.transparent,
+                      style: BorderStyle.solid,
+                    ),
+                    minimumSize: const Size.fromHeight(42),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 9),
-                  for (final wallet in _wallets) ...[
-                    _WalletTile(wallet: wallet),
-                    const SizedBox(height: 9),
-                  ],
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const AddWalletScreen(),
-                      ),
-                    ),
-                    icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
-                    label: const Text('Add Wallets'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF1264B5),
-                      side: const BorderSide(
-                        color: Color(0xFF72A9DF),
-                        style: BorderStyle.solid,
-                      ),
-                      minimumSize: const Size.fromHeight(42),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (!embedded) _WalletNavigation(
-              onHome: () => Navigator.maybePop(context),
-              onTransactions: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const TransactionPage(),
                 ),
               ),
-              onAdd: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const CategoryScreen(),
-                ),
-              ),
+            ],
+          ),
+        ),
+        if (!embedded)
+          _WalletNavigation(
+            onHome: () => Navigator.maybePop(context),
+            onTransactions: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const TransactionPage()),
             ),
-          ],
+            onAdd: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const CategoryScreen()),
+            ),
+          ),
+      ],
     );
 
     if (embedded) {
@@ -126,54 +134,123 @@ class _WalletHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const Text(
-          'Wallets',
-          style: TextStyle(
-            color: Color(0xFF202020),
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF3F7FC),
-            borderRadius: BorderRadius.circular(11),
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              const Icon(
-                Icons.notifications_none_rounded,
-                color: Color(0xFF3478D4),
-                size: 20,
-              ),
-              Positioned(
-                right: 8,
-                top: 7,
-                child: Container(
-                  width: 7,
-                  height: 7,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFF4352),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+    return const Text(
+      'Wallets',
+      style: TextStyle(
+        color: Color(0xFF202020),
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
+      ),
     );
   }
 }
 
-class _WalletBalanceCard extends StatelessWidget {
+class _BudgetCard extends StatelessWidget {
+  const _BudgetCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: monthlyBudget,
+      builder: (context, limit, _) {
+        final summary = BudgetSummary(limit: limit);
+        return Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const BudgetScreen()),
+            ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+              decoration: BoxDecoration(
+                border: Border.all(color: const Color(0xFFD8D8D8)),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundColor: Color(0xFF0DBB88),
+                    child: Icon(
+                      Icons.savings_outlined,
+                      color: Colors.white,
+                      size: 27,
+                    ),
+                  ),
+                  SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Budgets',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF282828),
+                          ),
+                        ),
+                        SizedBox(height: 3),
+                        Text(
+                          summary.status,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: summary.overLimit || summary.atRisk
+                                ? const Color(0xFFFF5454)
+                                : const Color(0xFF0BAC7D),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: Color(0xFF8190A8),
+                    size: 24,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _DashedBorderPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(9)),
+      );
+    final paint = Paint()
+      ..color = const Color(0xFF72A9DF)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    for (final metric in path.computeMetrics()) {
+      for (double offset = 0; offset < metric.length; offset += 4) {
+        canvas.drawPath(metric.extractPath(offset, offset + 2), paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedBorderPainter oldDelegate) => false;
+}
+
+class _WalletBalanceCard extends StatefulWidget {
   const _WalletBalanceCard();
+
+  @override
+  State<_WalletBalanceCard> createState() => _WalletBalanceCardState();
+}
+
+class _WalletBalanceCardState extends State<_WalletBalanceCard> {
+  bool _visible = true;
 
   @override
   Widget build(BuildContext context) {
@@ -190,23 +267,38 @@ class _WalletBalanceCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Text(
+                    const Text(
                       'Total Balance',
                       style: TextStyle(color: Color(0xFFB9CDF7), fontSize: 10),
                     ),
-                    SizedBox(width: 8),
-                    Icon(Icons.visibility_outlined, color: Color(0xFFB9CDF7), size: 15),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      width: 28,
+                      height: 24,
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        tooltip: _visible ? 'Hide balance' : 'Show balance',
+                        onPressed: () => setState(() => _visible = !_visible),
+                        icon: Icon(
+                          _visible
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          color: const Color(0xFFB9CDF7),
+                          size: 18,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
                 SizedBox(height: 5),
                 Text(
-                  '\$14,248.50',
+                  _visible ? '\$14,248.50' : '••••••',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 26,
@@ -223,16 +315,16 @@ class _WalletBalanceCard extends StatelessWidget {
             ),
           ),
           Container(
-            width: 53,
+            width: 63,
             height: 43,
             decoration: BoxDecoration(
-              color: const Color(0xFF6D8BD0),
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(9),
             ),
             child: const Icon(
               Icons.account_balance_wallet_rounded,
-              color: Color(0xFF173D94),
-              size: 33,
+              color: Color(0xFF8C9BD4),
+              size: 56,
             ),
           ),
           const SizedBox(width: 8),
@@ -262,7 +354,10 @@ class _WalletTile extends StatelessWidget {
           Container(
             width: 34,
             height: 34,
-            decoration: BoxDecoration(color: wallet.color, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: wallet.color,
+              shape: BoxShape.circle,
+            ),
             child: wallet.assetPath == null
                 ? Icon(wallet.icon, color: Colors.white, size: 19)
                 : ClipOval(
@@ -424,7 +519,11 @@ class _WalletNavigation extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _WalletNavItem(icon: Icons.home_outlined, label: 'Home', onTap: onHome),
+          _WalletNavItem(
+            icon: Icons.home_outlined,
+            label: 'Home',
+            onTap: onHome,
+          ),
           _WalletNavItem(
             icon: Icons.receipt_long_outlined,
             label: 'Transactions',
@@ -448,9 +547,12 @@ class _WalletNavigation extends StatelessWidget {
             label: 'Wallet',
             selected: true,
           ),
-          const _WalletNavItem(
+          _WalletNavItem(
             icon: Icons.insert_chart_outlined_rounded,
             label: 'Report',
+            onTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute<void>(builder: (_) => const ReportPage())),
           ),
         ],
       ),

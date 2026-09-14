@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'Profile.dart';
 import 'category.dart';
 import 'transaction.dart';
+import 'report.dart';
 import 'wallet.dart';
+import '../services/api_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -84,12 +86,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 },
                 children: [
                   _buildHomePage(),
-                  TransactionPage(
-                    embedded: true,
-                    onBack: () => _selectPage(0),
-                  ),
+                  TransactionPage(embedded: true, onBack: () => _selectPage(0)),
                   const WalletScreen(embedded: true),
-                  const _ReportPage(),
+                  ReportPage(embedded: true, onBack: () => _selectPage(0)),
                 ],
               ),
             ),
@@ -176,21 +175,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         const SizedBox(width: 10),
-        const Expanded(
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Good Morning,',
-                style: TextStyle(
-                  color: Color(0xFF888888),
-                fontSize: 10,
-                ),
+                style: TextStyle(color: Color(0xFF888888), fontSize: 10),
               ),
               SizedBox(height: 2),
               Text(
-                'Kim Jennie',
-                style: TextStyle(
+                ApiService.instance.currentUserName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
                   color: Color(0xFF201E1F),
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -205,33 +203,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           onTap: () {},
         ),
       ],
-    );
-  }
-}
-
-class _ReportPage extends StatelessWidget {
-  const _ReportPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.insert_chart_outlined_rounded, size: 52, color: Color(0xFF2458C6)),
-          SizedBox(height: 12),
-          Text(
-            'Reports',
-            style: TextStyle(
-              color: Color(0xFF17213D),
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          SizedBox(height: 5),
-          Text('Your spending report will appear here.'),
-        ],
-      ),
     );
   }
 }
@@ -397,10 +368,7 @@ class _TransactionTile extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   transaction.date,
-                  style: const TextStyle(
-                    color: Color(0xFF999999),
-                    fontSize: 9,
-                  ),
+                  style: const TextStyle(color: Color(0xFF999999), fontSize: 9),
                 ),
               ],
             ),
