@@ -400,3 +400,4 @@ class _TrendPainter extends CustomPainter {
   bool shouldRepaint(covariant _TrendPainter oldDelegate) =>
       oldDelegate.days != days || oldDelegate.month != month;
 }
+
