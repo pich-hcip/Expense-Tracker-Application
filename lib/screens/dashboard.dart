@@ -5,6 +5,7 @@ import 'category.dart';
 import 'transaction.dart';
 import 'report.dart';
 import 'wallet.dart';
+import 'notification.dart';
 import '../services/api_service.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -200,7 +201,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _SquareButton(
           icon: Icons.notifications_none_rounded,
           showBadge: true,
-          onTap: () {},
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const NotificationScreen(),
+            ),
+          ),
         ),
       ],
     );
