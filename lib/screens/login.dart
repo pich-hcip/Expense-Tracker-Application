@@ -1,13 +1,15 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+
 import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+
+import '../services/api_service.dart';
 import 'dashboard.dart';
 import 'register.dart';
-import '../services/api_service.dart';
 
 // This file has TWO screens in it:
 // 1. LoginScreen         -> the main login page
 // 2. ResetPasswordScreen -> opens when user taps "Forgot Password?"
-
 
 // 1. LOGIN SCREEN
 class LoginScreen extends StatefulWidget {
@@ -221,19 +223,24 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await ApiService.instance.login(email: email, password: password);
       if (!mounted) return;
+      _showMessage('Logged in successfully!');
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute<void>(builder: (_) => const DashboardScreen()),
         (route) => false,
       );
     } on ApiException catch (error) {
       if (mounted) _showMessage(error.message);
+    } catch (e) {
+      if (mounted) _showMessage('Login failed. Please try again.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -257,26 +264,68 @@ class ResetPasswordScreen extends StatefulWidget {
 }
 
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
-  // These two booleans control whether each password field
-  // shows dots (hidden) or plain text (visible).
   bool _isNewPasswordHidden = true;
   bool _isConfirmPasswordHidden = true;
   bool _isLoading = false;
+  bool _isSendingOtp = false;
+  bool _otpSent = false;
 
-  // Controllers let us read what the user typed in each field.
+  Timer? _timer;
+  int _secondsRemaining = 0;
+
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _otpController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
   @override
   void dispose() {
-    // Always clean up controllers when the screen is closed,
-    // so the app doesn't waste memory.
+    _timer?.cancel();
     _emailController.dispose();
+    _otpController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  void _startCountdown() {
+    setState(() {
+      _secondsRemaining = 60;
+      _otpSent = true;
+    });
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsRemaining > 0) {
+        setState(() => _secondsRemaining--);
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  Future<void> _sendOtp() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      _showMessage('Please enter your email address first.');
+      return;
+    }
+
+    setState(() => _isSendingOtp = true);
+    try {
+      final msg = await ApiService.instance.forgotPassword(email: email);
+      if (!mounted) return;
+      _showMessage(msg);
+      _startCountdown();
+    } on ApiException catch (error) {
+      if (mounted) _showMessage(error.message);
+    } catch (e) {
+      if (mounted) {
+        _showMessage('Failed to send verification code. Please try again.');
+      }
+    } finally {
+      if (mounted) setState(() => _isSendingOtp = false);
+    }
   }
 
   @override
@@ -305,24 +354,61 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
                 const SizedBox(height: 8),
 
-                // Subtitle 
+                // Subtitle
                 const Text(
-                  'Enter Your email and choose a new password.',
+                  'Enter your email, receive a 6-digit code, and set a new password.',
                   style: TextStyle(fontSize: 14, color: Colors.black54),
                 ),
 
                 const SizedBox(height: 30),
 
-                // Email Field
+                // Email Field with Send Code button
                 _buildOutlinedField(
                   controller: _emailController,
                   hintText: 'Email Address',
                   icon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
+                  suffix: Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: TextButton(
+                      onPressed: (_isSendingOtp || _secondsRemaining > 0)
+                          ? null
+                          : _sendOtp,
+                      child: _isSendingOtp
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(
+                              _secondsRemaining > 0
+                                  ? '${_secondsRemaining}s'
+                                  : (_otpSent ? 'Resend' : 'Send Code'),
+                              style: TextStyle(
+                                color: _secondsRemaining > 0
+                                    ? Colors.grey
+                                    : Colors.blue,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                  ),
                 ),
 
                 const SizedBox(height: 16),
 
-                // New Password Field 
+                // 6-digit OTP Field
+                _buildOutlinedField(
+                  controller: _otpController,
+                  hintText: '6-digit Verification Code',
+                  icon: Icons.mark_email_read_outlined,
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                ),
+
+                const SizedBox(height: 16),
+
+                // New Password Field
                 _buildOutlinedField(
                   controller: _newPasswordController,
                   hintText: 'New Password',
@@ -338,10 +424,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
                 const SizedBox(height: 16),
 
-                // Confirm New Password Field 
+                // Confirm New Password Field
                 _buildOutlinedField(
                   controller: _confirmPasswordController,
-                  hintText: 'Confirm new Password',
+                  hintText: 'Confirm New Password',
                   icon: Icons.lock_outline,
                   isPassword: true,
                   isHidden: _isConfirmPasswordHidden,
@@ -366,8 +452,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  // Small reusable functions below (easy to read)
-
   // Round back arrow button in the top-left corner
   Widget _buildBackButton(BuildContext context) {
     return Container(
@@ -384,8 +468,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  // A reusable text field with a rounded border (used for all 3 fields).
-  // If isPassword is true, it adds an eye icon to show/hide the text.
+  // Reusable outlined text field
   Widget _buildOutlinedField({
     required TextEditingController controller,
     required String hintText,
@@ -393,26 +476,32 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     bool isPassword = false,
     bool isHidden = false,
     VoidCallback? onToggleVisibility,
+    Widget? suffix,
+    TextInputType? keyboardType,
+    int? maxLength,
   }) {
     return TextField(
       controller: controller,
       obscureText: isPassword ? isHidden : false,
+      keyboardType: keyboardType,
+      maxLength: maxLength,
       decoration: InputDecoration(
+        counterText: '',
         hintText: hintText,
         prefixIcon: Icon(icon, color: Colors.black54),
-        // Only password fields get the eye icon on the right
-        suffixIcon: isPassword
-            ? IconButton(
-                icon: Icon(
-                  isHidden
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                  color: Colors.black54,
-                ),
-                onPressed: onToggleVisibility,
-              )
-            : null,
-        // Simple rounded border, matches the design (no gray fill this time)
+        suffixIcon:
+            suffix ??
+            (isPassword
+                ? IconButton(
+                    icon: Icon(
+                      isHidden
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: Colors.black54,
+                    ),
+                    onPressed: onToggleVisibility,
+                  )
+                : null),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide(color: Colors.grey.shade400),
@@ -473,10 +562,20 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   Future<void> _resetPassword() async {
     final email = _emailController.text.trim();
+    final otp = _otpController.text.trim();
     final newPassword = _newPasswordController.text;
     final confirmPassword = _confirmPasswordController.text;
-    if (email.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty) {
-      _showMessage('Please complete all fields.');
+
+    if (email.isEmpty) {
+      _showMessage('Please enter your email address.');
+      return;
+    }
+    if (otp.length != 6) {
+      _showMessage('Please enter the 6-digit verification code.');
+      return;
+    }
+    if (newPassword.isEmpty || confirmPassword.isEmpty) {
+      _showMessage('Please enter and confirm your new password.');
       return;
     }
     if (newPassword.length < 6) {
@@ -487,26 +586,29 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       _showMessage('Passwords do not match.');
       return;
     }
+
     setState(() => _isLoading = true);
     try {
-      await ApiService.instance.resetPassword(
+      final msg = await ApiService.instance.resetPassword(
         email: email,
+        otp: otp,
         newPassword: newPassword,
       );
       if (!mounted) return;
-      _showMessage('Password reset successfully. Please log in.');
+      _showMessage(msg);
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
         (route) => false,
       );
     } on ApiException catch (error) {
       if (mounted) _showMessage(error.message);
+    } catch (e) {
+      if (mounted) _showMessage('Password reset failed. Please try again.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // Small helper to show a message at the bottom of the screen
   void _showMessage(String message) {
     ScaffoldMessenger.of(
       context,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'dashboard.dart';
 import 'login.dart';
+import 'otp_verification.dart';
 import '../services/api_service.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -157,17 +157,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
+    final email = _emailController.text.trim();
     setState(() => _isLoading = true);
     try {
-      await ApiService.instance.register(
+      final response = await ApiService.instance.register(
         fullName: _nameController.text.trim(),
-        email: _emailController.text.trim(),
+        email: email,
         password: _passwordController.text,
       );
       if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(builder: (_) => const DashboardScreen()),
-        (route) => false,
+      final message = response['message']?.toString() ??
+          'A verification code has been sent to your email.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => OtpVerificationScreen(
+            email: email,
+            type: 'REGISTRATION',
+          ),
+        ),
       );
     } on ApiException catch (error) {
       if (mounted) {

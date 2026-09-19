@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -48,9 +49,8 @@ class ApiService {
 
   bool get isAuthenticated => _token != null && _token!.isNotEmpty;
   String get currentUserId => _userId ?? '';
-  String get currentUserName => _fullName?.trim().isNotEmpty == true
-      ? _fullName!
-      : 'User';
+  String get currentUserName =>
+      _fullName?.trim().isNotEmpty == true ? _fullName! : 'User';
   String get currentUserEmail => _email ?? '';
 
   Future<bool> checkConnection() async {
@@ -62,10 +62,11 @@ class ApiService {
     required String email,
     required String password,
   }) async {
-    final result = await post('/auth/login', body: {
-      'email': email,
-      'password': password,
-    }, authenticated: false);
+    final result = await post(
+      '/auth/login',
+      body: {'email': email, 'password': password},
+      authenticated: false,
+    );
     final user = result as Map<String, dynamic>;
     await _saveSession(user);
     return user;
@@ -77,26 +78,76 @@ class ApiService {
     required String password,
     String? phoneNumber,
   }) async {
-    final result = await post('/auth/register', body: {
-      'fullName': fullName,
-      'email': email,
-      'password': password,
-      if (phoneNumber != null && phoneNumber.isNotEmpty)
-        'phoneNumber': phoneNumber,
-    }, authenticated: false);
+    final result = await post(
+      '/auth/register',
+      body: {
+        'fullName': fullName,
+        'email': email,
+        'password': password,
+        if (phoneNumber != null && phoneNumber.isNotEmpty)
+          'phoneNumber': phoneNumber,
+      },
+      authenticated: false,
+    );
+    return result as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> verifyOtp({
+    required String email,
+    required String otp,
+    required String type,
+  }) async {
+    final result = await post(
+      '/auth/verify-otp',
+      body: {'email': email, 'otp': otp, 'type': type},
+      authenticated: false,
+    );
     final user = result as Map<String, dynamic>;
     await _saveSession(user);
     return user;
   }
 
-  Future<void> resetPassword({
+  Future<String> resendOtp({
     required String email,
+    required String type,
+  }) async {
+    final result = await post(
+      '/auth/resend-otp',
+      body: {'email': email, 'type': type},
+      authenticated: false,
+    );
+    if (result is Map<String, dynamic> && result['message'] != null) {
+      return result['message'].toString();
+    }
+    return 'Verification code resent successfully.';
+  }
+
+  Future<String> forgotPassword({required String email}) async {
+    final result = await post(
+      '/auth/forgot-password',
+      body: {'email': email},
+      authenticated: false,
+    );
+    if (result is Map<String, dynamic> && result['message'] != null) {
+      return result['message'].toString();
+    }
+    return 'A verification code has been sent to your email.';
+  }
+
+  Future<String> resetPassword({
+    required String email,
+    required String otp,
     required String newPassword,
   }) async {
-    await post('/auth/reset-password', body: {
-      'email': email,
-      'newPassword': newPassword,
-    }, authenticated: false);
+    final result = await post(
+      '/auth/reset-password',
+      body: {'email': email, 'otp': otp, 'newPassword': newPassword},
+      authenticated: false,
+    );
+    if (result is Map<String, dynamic> && result['message'] != null) {
+      return result['message'].toString();
+    }
+    return 'Password reset successfully. Please log in.';
   }
 
   Future<void> logout() async {
