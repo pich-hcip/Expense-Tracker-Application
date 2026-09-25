@@ -1,4 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../services/api_service.dart';
+import '../widgets/user_avatar.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -9,13 +15,50 @@ class EditProfilePage extends StatefulWidget {
 
 class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController(text: 'Kim Jennie');
-  final _emailController = TextEditingController(text: 'janniekim@gmail.com');
-  final _phoneController = TextEditingController(text: '+855 12 345 678');
-  final _birthdayController = TextEditingController(text: '16 January 1996');
+  late final TextEditingController _nameController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _phoneController;
+  late final TextEditingController _birthdayController;
+  bool _isLoading = false;
+  final ImagePicker _imagePicker = ImagePicker();
 
   static const _primaryBlue = Color(0xFF2458C6);
   static const _textColor = Color(0xFF17213D);
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(
+      text: ApiService.instance.currentUserName,
+    );
+    _emailController = TextEditingController(
+      text: ApiService.instance.currentUserEmail,
+    );
+    _phoneController = TextEditingController(
+      text: ApiService.instance.currentUserPhone,
+    );
+    _birthdayController = TextEditingController(
+      text: _formatBirthDate(ApiService.instance.currentUserBirthDate),
+    );
+
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    try {
+      final profile = await ApiService.instance.getProfile();
+      if (mounted && profile.isNotEmpty) {
+        setState(() {
+          _nameController.text = ApiService.instance.currentUserName;
+          _emailController.text = ApiService.instance.currentUserEmail;
+          _phoneController.text = ApiService.instance.currentUserPhone;
+          _birthdayController.text = _formatBirthDate(
+            ApiService.instance.currentUserBirthDate,
+          );
+        });
+      }
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -45,22 +88,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          Container(
-                            width: 96,
-                            height: 96,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: const Color(0xFFE7ECF7),
-                                width: 3,
-                              ),
-                            ),
-                            child: const ClipOval(
-                              child: Image(
-                                image: AssetImage('assets/images/profile.jpg'),
-                                fit: BoxFit.cover,
-                                alignment: Alignment(0, -0.2),
-                              ),
+                          UserAvatar(
+                            name: _nameController.text.isNotEmpty
+                                ? _nameController.text
+                                : ApiService.instance.currentUserName,
+                            avatarUrl: ApiService.instance.currentUserAvatar,
+                            size: 96,
+                            fontSize: 34,
+                            border: Border.all(
+                              color: const Color(0xFFE7ECF7),
+                              width: 3,
                             ),
                           ),
                           Positioned(
@@ -93,7 +130,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       controller: _nameController,
                       icon: Icons.person_outline,
                       textInputAction: TextInputAction.next,
-                      validator: (value) => value == null || value.trim().isEmpty
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty
                           ? 'Enter your full name'
                           : null,
                     ),
@@ -107,7 +145,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       validator: (value) {
                         final email = value?.trim() ?? '';
                         if (email.isEmpty) return 'Enter your email address';
-                        if (!email.contains('@')) return 'Enter a valid email address';
+                        if (!email.contains('@')) {
+                          return 'Enter a valid email address';
+                        }
                         return null;
                       },
                     ),
@@ -136,7 +176,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: _save,
+                    onPressed: _isLoading ? null : _save,
                     style: ElevatedButton.styleFrom(
                       elevation: 0,
                       backgroundColor: _primaryBlue,
@@ -145,10 +185,22 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      'Save Changes',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Save Changes',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -160,33 +212,261 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   void _changePhoto() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Photo picker is not connected yet')),
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 28,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Choose Profile Picture',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: _textColor,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.grey),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    await _pickImage();
+                  },
+                  icon: const Icon(Icons.upload_rounded),
+                  label: const Text('Choose photo from device'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _primaryBlue,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+              if (ApiService.instance.currentUserAvatar?.isNotEmpty ==
+                  true) ...[
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      await _setAvatar('');
+                    },
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Remove current photo'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFFDC2626),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 
+  Future<void> _pickImage() async {
+    try {
+      final image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 80,
+      );
+      if (image == null) return;
+
+      final bytes = await image.readAsBytes();
+      if (bytes.length > 2 * 1024 * 1024) {
+        throw const ApiException('Please choose an image smaller than 2 MB.');
+      }
+
+      final mimeType =
+          image.mimeType ??
+          (image.name.toLowerCase().endsWith('.png')
+              ? 'image/png'
+              : 'image/jpeg');
+      final dataUrl = 'data:$mimeType;base64,${base64Encode(bytes)}';
+      await _setAvatar(dataUrl);
+    } on ApiException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not select this image.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _setAvatar(String avatarUrl) async {
+    setState(() => _isLoading = true);
+    try {
+      await ApiService.instance.updateAvatar(avatarUrl: avatarUrl);
+      if (mounted) {
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Avatar updated successfully!')),
+        );
+      }
+    } on ApiException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to update avatar. Please try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> _selectBirthday() async {
+    final currentBirthDate = ApiService.instance.currentUserBirthDate;
     final selected = await showDatePicker(
       context: context,
-      initialDate: DateTime(1996, 1, 16),
+      initialDate:
+          DateTime.tryParse(currentBirthDate ?? '') ?? DateTime(1996, 1, 16),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
     );
     if (selected == null || !mounted) return;
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     _birthdayController.text =
         '${selected.day} ${months[selected.month - 1]} ${selected.year}';
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile updated')),
-    );
-    Navigator.maybePop(context);
+
+    setState(() => _isLoading = true);
+    try {
+      await ApiService.instance.updateProfile(
+        fullName: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        phoneNumber: _phoneController.text.trim(),
+        birthDate: _parseBirthDate(_birthdayController.text),
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated successfully!')),
+      );
+      Navigator.maybePop(context, true);
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to update profile. Please try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  static String _formatBirthDate(String? value) {
+    final date = DateTime.tryParse(value ?? '');
+    if (date == null) return '';
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  static String? _parseBirthDate(String value) {
+    final parts = value.trim().split(' ');
+    if (parts.length != 3) return null;
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    final day = int.tryParse(parts[0]);
+    final month = months.indexOf(parts[1]) + 1;
+    final year = int.tryParse(parts[2]);
+    if (day == null || month == 0 || year == null) return null;
+    return '${year.toString().padLeft(4, '0')}-'
+        '${month.toString().padLeft(2, '0')}-'
+        '${day.toString().padLeft(2, '0')}';
   }
 }
 
@@ -284,7 +564,10 @@ class _ProfileField extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(11),
-              borderSide: const BorderSide(color: Color(0xFF2458C6), width: 1.4),
+              borderSide: const BorderSide(
+                color: Color(0xFF2458C6),
+                width: 1.4,
+              ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(11),
@@ -292,7 +575,10 @@ class _ProfileField extends StatelessWidget {
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(11),
-              borderSide: const BorderSide(color: Color(0xFFFF4D4D), width: 1.4),
+              borderSide: const BorderSide(
+                color: Color(0xFFFF4D4D),
+                width: 1.4,
+              ),
             ),
           ),
         ),

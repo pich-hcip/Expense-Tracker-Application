@@ -3,12 +3,43 @@ import 'package:flutter/material.dart';
 import 'edit_profile.dart';
 import 'login.dart';
 import '../services/api_service.dart';
+import '../widgets/user_avatar.dart';
 
-class AccountPage extends StatelessWidget {
+class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
 
+  @override
+  State<AccountPage> createState() => _AccountPageState();
+}
+
+class _AccountPageState extends State<AccountPage> {
   static const Color primaryBlue = Color(0xFF2458C6);
   static const Color textColor = Color(0xFF17213D);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      await ApiService.instance.getProfile();
+      if (mounted) setState(() {});
+    } catch (_) {}
+  }
+
+  Future<void> _openEditProfile() async {
+    final updated = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => const EditProfilePage(),
+      ),
+    );
+    if (updated == true && mounted) {
+      await _loadProfile();
+      if (mounted) setState(() {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,11 +85,7 @@ class AccountPage extends StatelessWidget {
                   const Spacer(),
                   IconButton(
                     tooltip: 'Edit profile',
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const EditProfilePage(),
-                      ),
-                    ),
+                    onPressed: _openEditProfile,
                     icon: const Icon(
                       Icons.edit_outlined,
                       size: 25,
@@ -88,19 +115,14 @@ class AccountPage extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    // Profile Image
-                    Container(
-                      width: 62,
-                      height: 62,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                      ),
-                      child: const ClipOval(
-                        child: Image(
-                          image: AssetImage('assets/images/profile.jpg'),
-                          fit: BoxFit.cover,
-                          alignment: Alignment(0, -0.2),
-                        ),
+                    // Dynamic Profile Avatar
+                    UserAvatar(
+                      name: ApiService.instance.currentUserName,
+                      avatarUrl: ApiService.instance.currentUserAvatar,
+                      size: 62,
+                      border: Border.all(
+                        color: const Color(0x59FFFFFF),
+                        width: 2.5,
                       ),
                     ),
 
@@ -145,7 +167,7 @@ class AccountPage extends StatelessWidget {
               _menuItem(
                 icon: Icons.person_outline,
                 title: 'Personal Information',
-                onTap: () {},
+                onTap: _openEditProfile,
               ),
 
               _divider(),
@@ -169,7 +191,7 @@ class AccountPage extends StatelessWidget {
               _menuItem(
                 icon: Icons.language,
                 title: 'Currency',
-                trailingText: 'USD (\$)',
+                trailingText: '${ApiService.instance.currentCurrency} (\$)',
                 onTap: () {},
               ),
 
@@ -252,18 +274,19 @@ class AccountPage extends StatelessWidget {
                 trailingText,
                 style: const TextStyle(
                   fontSize: 12,
-                  color: primaryBlue,
+                  color: Color(0xFF6B7280),
                   fontWeight: FontWeight.w500,
                 ),
               ),
 
-            const SizedBox(width: 13),
+            const SizedBox(width: 6),
 
-            const Icon(
-              Icons.chevron_right,
-              size: 21,
-              color: Color(0xFF65728A),
-            ),
+            if (!isLogout)
+              const Icon(
+                Icons.chevron_right,
+                size: 21,
+                color: Color(0xFF8B98B2),
+              ),
           ],
         ),
       ),
@@ -274,16 +297,10 @@ class AccountPage extends StatelessWidget {
   // DIVIDER
   // =========================================================
   static Widget _divider() {
-    return const Padding(
-      padding: EdgeInsets.only(
-        left: 37,
-        right: 0,
-      ),
-      child: Divider(
-        height: 1,
-        thickness: 0.7,
-        color: Color(0xFFF0F2F5),
-      ),
+    return const Divider(
+      height: 1,
+      thickness: 1,
+      color: Color(0xFFF3F4F6),
     );
   }
 
@@ -291,35 +308,54 @@ class AccountPage extends StatelessWidget {
   // LOGOUT DIALOG
   // =========================================================
   static void _showLogoutDialog(BuildContext context) {
-    showDialog(
+    showDialog<void>(
       context: context,
-      builder: (context) {
+      builder: (ctx) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16),
           ),
           title: const Text(
             'Sign Out',
             style: TextStyle(
-              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: textColor,
             ),
           ),
           content: const Text(
             'Are you sure you want to sign out?',
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF6B7280),
+            ),
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Color(0xFF8B98B2)),
+              ),
             ),
             TextButton(
-              onPressed: () => _logout(context),
+              onPressed: () async {
+                Navigator.pop(ctx);
+                await ApiService.instance.logout();
+                if (context.mounted) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const LoginScreen(),
+                    ),
+                    (route) => false,
+                  );
+                }
+              },
               child: const Text(
                 'Sign Out',
                 style: TextStyle(
-                  color: Colors.red,
+                  color: Color(0xFFFF4D4D),
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -327,22 +363,5 @@ class AccountPage extends StatelessWidget {
         );
       },
     );
-  }
-
-  static Future<void> _logout(BuildContext dialogContext) async {
-    final navigator = Navigator.of(dialogContext, rootNavigator: true);
-    try {
-      await ApiService.instance.logout();
-      if (!dialogContext.mounted) return;
-      navigator.pushAndRemoveUntil(
-        MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
-    } catch (_) {
-      if (!dialogContext.mounted) return;
-      ScaffoldMessenger.of(dialogContext).showSnackBar(
-        const SnackBar(content: Text('Could not sign out. Please try again.')),
-      );
-    }
   }
 }

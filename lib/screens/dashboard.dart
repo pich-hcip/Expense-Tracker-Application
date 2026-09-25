@@ -7,6 +7,7 @@ import 'report.dart';
 import 'wallet.dart';
 import 'notification.dart';
 import '../services/api_service.dart';
+import '../widgets/user_avatar.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -157,21 +158,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
           button: true,
           label: 'Open profile',
           child: GestureDetector(
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const AccountPage()),
-            ),
-            child: Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                image: const DecorationImage(
-                  image: AssetImage('assets/images/profile.jpg'),
-                  fit: BoxFit.cover,
-                  alignment: Alignment(0, -0.2),
-                ),
-                border: Border.all(color: const Color(0xFFE8ECF3)),
-              ),
+            onTap: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const AccountPage()),
+              );
+              if (mounted) {
+                await _refreshProfile();
+              }
+            },
+            child: UserAvatar(
+              name: ApiService.instance.currentUserName,
+              avatarUrl: ApiService.instance.currentUserAvatar,
+              size: 38,
+              border: Border.all(color: const Color(0xFFE8ECF3)),
             ),
           ),
         ),
@@ -202,13 +201,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
           icon: Icons.notifications_none_rounded,
           showBadge: true,
           onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => const NotificationScreen(),
-            ),
+            MaterialPageRoute<void>(builder: (_) => const NotificationScreen()),
           ),
         ),
       ],
     );
+  }
+
+  Future<void> _refreshProfile() async {
+    try {
+      await ApiService.instance.getProfile();
+    } catch (_) {
+      // Keep the locally cached profile when the API is temporarily unavailable.
+    }
+    if (mounted) setState(() {});
   }
 }
 

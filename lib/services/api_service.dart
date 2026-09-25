@@ -23,11 +23,19 @@ class ApiService {
   static const _userIdKey = 'auth_user_id';
   static const _fullNameKey = 'auth_full_name';
   static const _emailKey = 'auth_email';
+  static const _phoneKey = 'auth_phone';
+  static const _avatarUrlKey = 'auth_avatar_url';
+  static const _birthDateKey = 'auth_birth_date';
+  static const _currencyKey = 'auth_currency';
 
   String? _token;
   String? _userId;
   String? _fullName;
   String? _email;
+  String? _phoneNumber;
+  String? _avatarUrl;
+  String? _birthDate;
+  String? _defaultCurrency;
 
   String get baseUrl {
     if (_configuredBaseUrl.isNotEmpty) {
@@ -45,6 +53,10 @@ class ApiService {
     _userId = preferences.getString(_userIdKey);
     _fullName = preferences.getString(_fullNameKey);
     _email = preferences.getString(_emailKey);
+    _phoneNumber = preferences.getString(_phoneKey);
+    _avatarUrl = preferences.getString(_avatarUrlKey);
+    _birthDate = preferences.getString(_birthDateKey);
+    _defaultCurrency = preferences.getString(_currencyKey);
   }
 
   bool get isAuthenticated => _token != null && _token!.isNotEmpty;
@@ -52,6 +64,10 @@ class ApiService {
   String get currentUserName =>
       _fullName?.trim().isNotEmpty == true ? _fullName! : 'User';
   String get currentUserEmail => _email ?? '';
+  String get currentUserPhone => _phoneNumber ?? '';
+  String? get currentUserAvatar => _avatarUrl;
+  String? get currentUserBirthDate => _birthDate;
+  String get currentCurrency => _defaultCurrency ?? 'USD';
 
   Future<bool> checkConnection() async {
     final result = await get('/health', authenticated: false);
@@ -150,17 +166,123 @@ class ApiService {
     return 'Password reset successfully. Please log in.';
   }
 
+  Future<Map<String, dynamic>> getProfile() async {
+    final result = await get('/users/me', authenticated: true);
+    if (result is Map<String, dynamic>) {
+      await _applyProfileData(result);
+      return result;
+    }
+    return {};
+  }
+
+  Future<Map<String, dynamic>> updateProfile({
+    required String fullName,
+    required String email,
+    String? phoneNumber,
+    String? birthDate,
+  }) async {
+    final result = await put(
+      '/users/me',
+      body: {
+        'fullName': fullName,
+        'email': email,
+        if (phoneNumber != null) 'phoneNumber': phoneNumber,
+        if (birthDate != null) 'birthDate': birthDate,
+      },
+    );
+    if (result is Map<String, dynamic>) {
+      await _applyProfileData(result);
+      return result;
+    } else {
+      _fullName = fullName;
+      _email = email;
+      _phoneNumber = phoneNumber;
+      _birthDate = birthDate;
+      final preferences = await SharedPreferences.getInstance();
+      await Future.wait([
+        preferences.setString(_fullNameKey, fullName),
+        preferences.setString(_emailKey, email),
+        if (phoneNumber != null)
+          preferences.setString(_phoneKey, phoneNumber)
+        else
+          preferences.remove(_phoneKey),
+        if (birthDate != null)
+          preferences.setString(_birthDateKey, birthDate)
+        else
+          preferences.remove(_birthDateKey),
+      ]);
+      return {
+        'fullName': fullName,
+        'email': email,
+        'phoneNumber': phoneNumber,
+        'birthDate': birthDate,
+      };
+    }
+  }
+
+  Future<void> updateAvatar({required String avatarUrl}) async {
+    await put('/users/me/avatar', body: {'avatarUrl': avatarUrl});
+    _avatarUrl = avatarUrl;
+    final preferences = await SharedPreferences.getInstance();
+    if (avatarUrl.isNotEmpty) {
+      await preferences.setString(_avatarUrlKey, avatarUrl);
+    } else {
+      await preferences.remove(_avatarUrlKey);
+    }
+  }
+
+  Future<void> _applyProfileData(Map<String, dynamic> data) async {
+    _userId = data['id']?.toString() ?? _userId;
+    _fullName = data['fullName']?.toString() ?? _fullName;
+    _email = data['email']?.toString() ?? _email;
+    _phoneNumber = data['phoneNumber']?.toString() ?? _phoneNumber;
+    _avatarUrl = data['avatarUrl']?.toString() ?? _avatarUrl;
+    _birthDate = data['birthDate']?.toString() ?? _birthDate;
+    _defaultCurrency = data['defaultCurrency']?.toString() ?? _defaultCurrency;
+    _token = data['token']?.toString() ?? _token;
+
+    final preferences = await SharedPreferences.getInstance();
+    await Future.wait([
+      if (_userId != null) preferences.setString(_userIdKey, _userId!),
+      if (_fullName != null) preferences.setString(_fullNameKey, _fullName!),
+      if (_email != null) preferences.setString(_emailKey, _email!),
+      if (_phoneNumber != null)
+        preferences.setString(_phoneKey, _phoneNumber!)
+      else
+        preferences.remove(_phoneKey),
+      if (_avatarUrl != null && _avatarUrl!.isNotEmpty)
+        preferences.setString(_avatarUrlKey, _avatarUrl!)
+      else
+        preferences.remove(_avatarUrlKey),
+      if (_birthDate != null && _birthDate!.isNotEmpty)
+        preferences.setString(_birthDateKey, _birthDate!)
+      else
+        preferences.remove(_birthDateKey),
+      if (_defaultCurrency != null)
+        preferences.setString(_currencyKey, _defaultCurrency!),
+      if (_token != null) preferences.setString(_tokenKey, _token!),
+    ]);
+  }
+
   Future<void> logout() async {
     _token = null;
     _userId = null;
     _fullName = null;
     _email = null;
+    _phoneNumber = null;
+    _avatarUrl = null;
+    _birthDate = null;
+    _defaultCurrency = null;
     final preferences = await SharedPreferences.getInstance();
     await Future.wait([
       preferences.remove(_tokenKey),
       preferences.remove(_userIdKey),
       preferences.remove(_fullNameKey),
       preferences.remove(_emailKey),
+      preferences.remove(_phoneKey),
+      preferences.remove(_avatarUrlKey),
+      preferences.remove(_birthDateKey),
+      preferences.remove(_currencyKey),
     ]);
   }
 
